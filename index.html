@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="💋 Kiss Defense - 迫り来るキスを止めろ！スマホリズムゲーム">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>💋 Kiss Defense</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen active">
+        <div class="title-content">
+            <div class="title-logo">
+                <div class="title-kiss" id="title-kiss-emoji">💋</div>
+                <h1 class="title-main">KISS DEFENSE</h1>
+                <p class="title-sub">— Don't Let Them Through —</p>
+            </div>
+            <button class="gold-btn start-btn" id="btn-start">
+                <span>TAP TO START</span>
+            </button>
+            <p class="title-credit">♪ 天国と地獄 — Luxury CM Arrange</p>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <canvas id="game-canvas"></canvas>
+        <div class="game-hud" id="game-hud">
+            <div class="hud-top">
+                <div class="hud-item">
+                    <span class="hud-label">SCORE</span>
+                    <span class="hud-value" id="hud-score">0</span>
+                </div>
+                <div class="hud-item hud-center">
+                    <span class="hud-label">COMBO</span>
+                    <span class="hud-value" id="hud-combo">0</span>
+                </div>
+                <div class="hud-item hud-right">
+                    <span class="hud-label">BPM</span>
+                    <span class="hud-value" id="hud-bpm">80</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen">
+        <div class="gameover-kisses" id="gameover-kisses"></div>
+        <div class="gameover-content">
+            <h2 class="gameover-title">GAME OVER</h2>
+            <div class="gameover-score-block">
+                <span class="gameover-label">SCORE</span>
+                <span class="gameover-value" id="gameover-score">0</span>
+            </div>
+            <div class="gameover-stats">
+                <div class="gameover-stat">
+                    <span class="gameover-stat-label">BLOCKED</span>
+                    <span class="gameover-stat-value" id="gameover-blocked">0</span>
+                </div>
+                <div class="gameover-stat">
+                    <span class="gameover-stat-label">MAX COMBO</span>
+                    <span class="gameover-stat-value" id="gameover-maxcombo">0</span>
+                </div>
+                <div class="gameover-stat">
+                    <span class="gameover-stat-label">TIME</span>
+                    <span class="gameover-stat-value" id="gameover-time">0:00</span>
+                </div>
+            </div>
+            <button class="gold-btn retry-btn" id="btn-retry">
+                <span>TAP TO RETRY</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="js/audio.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

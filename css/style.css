@@ -1,0 +1,221 @@
+/* ============================================
+   💋 KISS DEFENSE — LUXURY BRAND STYLESHEET
+   ============================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --black: #0a0a0a;
+    --gold: #D4AF37;
+    --gold-light: #F5D061;
+    --gold-dark: #8B7425;
+    --crimson: #DC143C;
+    --rose: #C85A7C;
+    --cream: #F5F0E1;
+    --white: #FAFAFA;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+}
+
+html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- Screens --- */
+.screen {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    justify-content: center; align-items: center;
+    z-index: 1;
+}
+.screen.active { display: flex; }
+
+/* --- Gold Button --- */
+.gold-btn {
+    padding: 16px 48px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.gold-btn::before {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
+    animation: shimmer 2.5s ease-in-out infinite;
+}
+.gold-btn:active {
+    background: rgba(212,175,55,0.2);
+    transform: scale(0.95);
+}
+
+/* --- Title Screen --- */
+#title-screen {
+    background: radial-gradient(ellipse at 50% 40%, rgba(212,175,55,0.06) 0%, var(--black) 70%);
+    flex-direction: column;
+}
+.title-content {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 36px; z-index: 1;
+}
+.title-logo { text-align: center; }
+.title-kiss {
+    font-size: clamp(4rem, 15vw, 8rem);
+    animation: kiss-float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 30px rgba(220,20,60,0.5));
+}
+.title-main {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 8vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(212,175,55,0.3);
+}
+.title-sub {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(0.75rem, 2.5vw, 1.1rem);
+    color: var(--cream);
+    letter-spacing: 0.4em;
+    margin-top: 8px;
+    opacity: 0.6;
+}
+.title-credit {
+    font-size: 0.7rem;
+    color: rgba(212,175,55,0.35);
+    letter-spacing: 0.1em;
+}
+
+/* --- Game HUD --- */
+.game-hud {
+    position: absolute; top: 0; left: 0;
+    width: 100%;
+    pointer-events: none; z-index: 10;
+    padding: env(safe-area-inset-top, 12px) 20px 0;
+}
+.hud-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-top: 8px;
+}
+.hud-item { display: flex; flex-direction: column; gap: 2px; }
+.hud-center { align-items: center; }
+.hud-right { text-align: right; align-items: flex-end; }
+.hud-label {
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(212,175,55,0.5);
+}
+.hud-value {
+    font-family: var(--font-display);
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(212,175,55,0.3);
+}
+
+/* --- Game Over Screen --- */
+#gameover-screen {
+    background: rgba(5,0,0,0.92);
+    flex-direction: column;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+}
+.gameover-kisses {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: hidden; pointer-events: none;
+}
+.gameover-kiss-item {
+    position: absolute;
+    animation: kiss-pop 0.6s ease-out forwards;
+    opacity: 0;
+}
+.gameover-content {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 20px; z-index: 10;
+}
+.gameover-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 12vw, 5rem);
+    font-weight: 900;
+    color: var(--crimson);
+    text-shadow: 0 0 40px rgba(220,20,60,0.6);
+    animation: gameover-appear 0.8s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.gameover-score-block { text-align: center; }
+.gameover-label {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: rgba(212,175,55,0.6);
+}
+.gameover-value {
+    font-family: var(--font-display);
+    font-size: 2.5rem; font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(212,175,55,0.4);
+}
+.gameover-stats { display: flex; gap: 28px; }
+.gameover-stat { text-align: center; }
+.gameover-stat-label {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 4px;
+}
+.gameover-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--white);
+}
+
+/* --- Canvas --- */
+#game-canvas {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    touch-action: none;
+}
+
+/* --- Animations --- */
+@keyframes kiss-float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-18px) rotate(5deg); }
+}
+@keyframes shimmer {
+    0% { left: -100%; }
+    50%, 100% { left: 100%; }
+}
+@keyframes kiss-pop {
+    0% { opacity: 0; transform: scale(0) rotate(0deg); }
+    60% { opacity: 1; transform: scale(1.2) rotate(15deg); }
+    100% { opacity: 0.85; transform: scale(1) rotate(0deg); }
+}
+@keyframes gameover-appear {
+    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* --- Responsive --- */
+@media (max-width: 400px) {
+    .hud-value { font-size: 1.1rem; }
+    .gameover-stats { gap: 16px; }
+}

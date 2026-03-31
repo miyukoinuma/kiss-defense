@@ -1,221 +1,95 @@
 /* ============================================
-   💋 KISS DEFENSE — LUXURY BRAND STYLESHEET
+   💋NUMARIN — LUXURY RHYTHM DESIGN
    ============================================ */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --black: #0a0a0a;
     --gold: #D4AF37;
-    --gold-light: #F5D061;
-    --gold-dark: #8B7425;
+    --gold-bright: #F5D76E;
     --crimson: #DC143C;
-    --rose: #C85A7C;
-    --cream: #F5F0E1;
-    --white: #FAFAFA;
-    --font-display: 'Playfair Display', Georgia, serif;
-    --font-body: 'Inter', -apple-system, sans-serif;
+    --black: #080505;
+    --white: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.85);
 }
 
-html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--black);
-    color: var(--white);
-    font-family: var(--font-body);
-    touch-action: none;
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-    -webkit-user-select: none;
 }
 
-/* --- Screens --- */
-.screen {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    display: none;
-    justify-content: center; align-items: center;
-    z-index: 1;
-}
-.screen.active { display: flex; }
-
-/* --- Gold Button --- */
-.gold-btn {
-    padding: 16px 48px;
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    letter-spacing: 0.3em;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-.gold-btn::before {
-    content: '';
-    position: absolute; top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
-    animation: shimmer 2.5s ease-in-out infinite;
-}
-.gold-btn:active {
-    background: rgba(212,175,55,0.2);
-    transform: scale(0.95);
-}
-
-/* --- Title Screen --- */
-#title-screen {
-    background: radial-gradient(ellipse at 50% 40%, rgba(212,175,55,0.06) 0%, var(--black) 70%);
-    flex-direction: column;
-}
-.title-content {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 36px; z-index: 1;
-}
-.title-logo { text-align: center; }
-.title-kiss {
-    font-size: clamp(4rem, 15vw, 8rem);
-    animation: kiss-float 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 30px rgba(220,20,60,0.5));
-}
-.title-main {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 8vw, 4rem);
-    font-weight: 900;
-    letter-spacing: 0.15em;
-    color: var(--gold);
-    text-shadow: 0 0 40px rgba(212,175,55,0.3);
-}
-.title-sub {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: clamp(0.75rem, 2.5vw, 1.1rem);
-    color: var(--cream);
-    letter-spacing: 0.4em;
-    margin-top: 8px;
-    opacity: 0.6;
-}
-.title-credit {
-    font-size: 0.7rem;
-    color: rgba(212,175,55,0.35);
-    letter-spacing: 0.1em;
-}
-
-/* --- Game HUD --- */
-.game-hud {
-    position: absolute; top: 0; left: 0;
-    width: 100%;
-    pointer-events: none; z-index: 10;
-    padding: env(safe-area-inset-top, 12px) 20px 0;
-}
-.hud-top {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    padding-top: 8px;
-}
-.hud-item { display: flex; flex-direction: column; gap: 2px; }
-.hud-center { align-items: center; }
-.hud-right { text-align: right; align-items: flex-end; }
-.hud-label {
-    font-family: var(--font-display);
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    color: rgba(212,175,55,0.5);
-}
-.hud-value {
-    font-family: var(--font-display);
-    font-size: 1.3rem; font-weight: 700;
-    color: var(--gold);
-    text-shadow: 0 0 10px rgba(212,175,55,0.3);
-}
-
-/* --- Game Over Screen --- */
-#gameover-screen {
-    background: rgba(5,0,0,0.92);
-    flex-direction: column;
-    z-index: 100;
-    backdrop-filter: blur(4px);
-}
-.gameover-kisses {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
-    overflow: hidden; pointer-events: none;
-}
-.gameover-kiss-item {
-    position: absolute;
-    animation: kiss-pop 0.6s ease-out forwards;
-    opacity: 0;
-}
-.gameover-content {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 20px; z-index: 10;
-}
-.gameover-title {
-    font-family: var(--font-display);
-    font-size: clamp(2.5rem, 12vw, 5rem);
-    font-weight: 900;
-    color: var(--crimson);
-    text-shadow: 0 0 40px rgba(220,20,60,0.6);
-    animation: gameover-appear 0.8s cubic-bezier(0.175,0.885,0.32,1.275);
-}
-.gameover-score-block { text-align: center; }
-.gameover-label {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: rgba(212,175,55,0.6);
-}
-.gameover-value {
-    font-family: var(--font-display);
-    font-size: 2.5rem; font-weight: 700;
-    color: var(--gold);
-    text-shadow: 0 0 20px rgba(212,175,55,0.4);
-}
-.gameover-stats { display: flex; gap: 28px; }
-.gameover-stat { text-align: center; }
-.gameover-stat-label {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 0.55rem;
-    letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.35);
-    margin-bottom: 4px;
-}
-.gameover-stat-value {
-    font-family: var(--font-display);
-    font-size: 1.2rem; font-weight: 700;
+body {
+    background-color: var(--black);
     color: var(--white);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    height: 100vh; width: 100vw;
 }
 
-/* --- Canvas --- */
-#game-canvas {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
-    touch-action: none;
+.screen {
+    position: absolute; width: 100%; height: 100%;
+    display: none; background: #000; z-index: 10;
+}
+.screen.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+/* --- LUXURY LOGO STYLES --- */
+.brand-logo-container { margin-bottom: 20px; animation: glow-float 4s ease-in-out infinite; }
+.brand-logo { max-width: 160px; height: auto; border: 1px solid var(--gold); padding: 10px; border-radius: 4px; box-shadow: 0 0 40px rgba(212, 175, 55, 0.2); }
+
+.hud-logo { width: 45px; height: auto; opacity: 0.8; filter: drop-shadow(0 0 5px var(--gold)); }
+
+.gameover-logo-container { margin-bottom: 15px; }
+.gameover-logo { width: 100px; height: auto; filter: drop-shadow(0 0 10px var(--gold)); }
+
+/* Title Content */
+.title-content { text-align: center; max-width: 80%; }
+.title-main {
+    font-family: 'Playfair Display', serif; font-size: 3.8rem; font-weight: 900;
+    color: var(--white); letter-spacing: 0.4rem; text-shadow: 0 0 20px rgba(255,255,255,0.4);
+    margin: 10px 0;
+}
+.title-sub { color: var(--gold); letter-spacing: 0.2rem; font-size: 0.8rem; }
+
+/* Buttons */
+.gold-btn {
+    margin-top: 40px; padding: 15px 45px;
+    background: transparent; border: 2px solid var(--gold);
+    color: var(--gold); font-weight: 700; letter-spacing: 0.2rem;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: 0.3s;
+}
+.gold-btn:active { background: var(--gold); color: #000; scale: 0.95; }
+.title-credit { margin-top: 30px; font-size: 0.7rem; color: #666; font-style: italic; }
+
+/* Game HUD */
+#game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+.game-hud {
+    position: absolute; top: 0; left: 0; width: 100%; padding: 20px 40px;
+    display: flex; flex-direction: column; z-index: 5; pointer-events: none;
+}
+.hud-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.hud-center { display: flex; gap: 40px; }
+.hud-item { text-align: center; }
+.hud-label { display: block; font-size: 0.65rem; letter-spacing: 0.2rem; color: var(--gold); margin-bottom: 2px; }
+.hud-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #fff; }
+
+/* Game Over */
+#gameover-screen { background: rgba(0,0,0,0.92); z-index: 20; }
+.gameover-content { text-align: center; }
+.gameover-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #fff; margin-bottom: 20px; }
+.gameover-score-block { margin-bottom: 30px; }
+.gameover-score-block .gameover-value { font-size: 4rem; color: var(--gold); }
+.gameover-stats { display: flex; justify-content: space-around; width: 100%; max-width: 500px; margin-bottom: 40px; }
+.gameover-stat { text-align: center; }
+.gameover-stat-label { display: block; font-size: 0.6rem; color: #999; margin-bottom: 5px; }
+.gameover-stat-value { font-size: 1.2rem; font-weight: 600; color: #fff; }
+
+@keyframes glow-float {
+    0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); }
+    50% { transform: translateY(-10px); filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.7)); }
 }
 
-/* --- Animations --- */
-@keyframes kiss-float {
-    0%, 100% { transform: translateY(0) rotate(-5deg); }
-    50% { transform: translateY(-18px) rotate(5deg); }
-}
-@keyframes shimmer {
-    0% { left: -100%; }
-    50%, 100% { left: 100%; }
-}
-@keyframes kiss-pop {
-    0% { opacity: 0; transform: scale(0) rotate(0deg); }
-    60% { opacity: 1; transform: scale(1.2) rotate(15deg); }
-    100% { opacity: 0.85; transform: scale(1) rotate(0deg); }
-}
-@keyframes gameover-appear {
-    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-
-/* --- Responsive --- */
-@media (max-width: 400px) {
-    .hud-value { font-size: 1.1rem; }
-    .gameover-stats { gap: 16px; }
+@media (max-width: 600px) {
+    .title-main { font-size: 2.8rem; }
+    .hud-center { gap: 20px; }
+    .hud-value { font-size: 1.4rem; }
 }

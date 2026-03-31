@@ -182,7 +182,7 @@ class Game {
     }
 
     _spawnKiss(targetTime, travelTime) {
-        const margin = 100;
+        const margin = 40; // Reduced margin to allow wider spread on mobile
         const tx = margin + Math.random() * (this.renderer.w - margin * 2);
         const ty = this.renderer.h * 0.8 + Math.random() * (this.renderer.h * 0.15);
         this.kisses.push({ id: this.nextKissId++, targetX: tx, targetY: ty, targetTime: targetTime, spawnTime: targetTime - travelTime, progress: 0, hit: false, missed: false, chuPlayed: false });

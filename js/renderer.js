@@ -1,6 +1,6 @@
 // ============================================
-// 💋NUMARIN — ULTRA-CLEAR RENDERER
-// Optimized for Frontal Defense and Ghosting Fix
+// 💋NUMARIN — 3D PERSPECTIVE RENDERER
+// Z-Sorting & Responsive UI Optimization
 // ============================================
 
 class GameRenderer {
@@ -59,7 +59,6 @@ class GameRenderer {
         this.vanishY = this.h * 0.35;
     }
 
-    // --- RESET FOR GHOSTING FIX ---
     reset() {
         this.particles = [];
         this.hands = [];
@@ -69,12 +68,9 @@ class GameRenderer {
 
     clear() {
         const ctx = this.ctx;
-        // STRONG CLEAR: Wipe all previous frame data
         ctx.clearRect(0, 0, this.w, this.h);
-        
         ctx.fillStyle = '#080505';
         ctx.fillRect(0, 0, this.w, this.h);
-        
         const grad = ctx.createRadialGradient(this.vanishX, this.vanishY, 0, this.vanishX, this.vanishY, this.h * 0.8);
         grad.addColorStop(0, 'rgba(212, 175, 55, 0.08)');
         grad.addColorStop(1, 'transparent');
@@ -85,23 +81,15 @@ class GameRenderer {
     drawKiss(kiss, time) {
         const ctx = this.ctx;
         const p = kiss.progress; if (p < 0 || p > 1.2) return;
-        
-        // PERSPECTIVE REFINEMENT: Speeding up as it comes closer
         const perspective = Math.pow(p, 2.5);
         const bx = this.vanishX + (kiss.targetX - this.vanishX) * perspective;
         const by = this.vanishY + (kiss.targetY - this.vanishY) * perspective;
-        
-        // Dynamic arc: flattens as it approaches screen
         const arcHeight = -240 * Math.sin(Math.PI * p) * Math.max(0, 1 - p * 1.1);
         const x = bx; const y = by + arcHeight;
-        
-        // SCALING: Grows significantly more (Frontal Defense)
         const size = (10 + 280 * perspective); 
 
         ctx.save();
         ctx.translate(x, y);
-        
-        // REMOVED SHADOWBLUR: Ghosting culprit #1
         ctx.rotate(Math.sin(time * 8 + kiss.id) * 0.15 * p);
         ctx.globalAlpha = Math.min(1, p * 8);
         
@@ -123,7 +111,6 @@ class GameRenderer {
         const scale = t < 0.15 ? 0.6 + (t / 0.15) * 1.7 : 2.3 - ((t - 0.15) / 0.85) * 1.1;
         ctx.globalAlpha = Math.min(1, hand.life * 2.5);
         ctx.translate(0, -65 * Math.sin(t * Math.PI));
-        
         const img = this.processedImages.hand;
         if (img) {
             const aspect = img.width / img.height;
@@ -152,7 +139,9 @@ class GameRenderer {
         this.clear();
         
         if (!isGameOver) {
-            kisses.filter(k => !k.hit && !k.missed).forEach(k => this.drawKiss(k, time));
+            // --- Z-SORTING: Furthest (low p) drawn first, Nearest (high p) drawn last ---
+            const sortedKisses = [...kisses].filter(k => !k.hit && !k.missed).sort((a,b) => a.progress - b.progress);
+            sortedKisses.forEach(k => this.drawKiss(k, time));
         } else {
             this.gameOverKisses.forEach(k => {
                 k.x += k.vx * dt; k.y += k.vy * dt; k.vy += k.gravity * dt;
@@ -171,7 +160,6 @@ class GameRenderer {
         
         this.hands.forEach(h => this.drawHand(h));
         this.hands = this.hands.filter(h => { h.life -= (dt || 0.016) * 2.8; return h.life > 0; });
-        
         this.particles = this.particles.filter(p => {
             p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= p.decay;
             if (p.life > 0) {
@@ -186,10 +174,15 @@ class GameRenderer {
         if (this.gameOverTextAlpha <= 0) return;
         const ctx = this.ctx; ctx.save(); ctx.globalAlpha = this.gameOverTextAlpha;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.font = '900 4rem "Playfair Display", serif';
+        
+        // RESPONSIVE LOGO SIZE: Adjust based on screen width (max-limited for desktop)
+        const baseSize = Math.min(3.2, this.w / 100);
+        ctx.font = `900 ${baseSize}rem "Playfair Display", serif`;
         ctx.fillStyle = '#fff'; ctx.fillText('MISSION OVER', this.w / 2, this.h / 2);
-        ctx.font = '700 1rem "Inter", sans-serif'; ctx.fillStyle = '#D4AF37';
-        ctx.fillText('N U M A R I N', this.w / 2, this.h / 2 + 60);
+        
+        ctx.font = `700 ${Math.min(1.2, baseSize/3)}rem "Inter", sans-serif`;
+        ctx.fillStyle = '#D4AF37';
+        ctx.fillText('N U M A R I N', this.w / 2, this.h / 2 + (baseSize * 15));
         ctx.restore();
     }
 

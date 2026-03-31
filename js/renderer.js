@@ -1,6 +1,6 @@
 // ============================================
-// 💋NUMARIN — ULTRA-LIGHTWEIGHT RENDERER
-// Optimized for mobile/Safari performance
+// 💋NUMARIN — ULTRA-CLEAR RENDERER
+// Optimized for Frontal Defense and Ghosting Fix
 // ============================================
 
 class GameRenderer {
@@ -17,7 +17,6 @@ class GameRenderer {
         this.images = { lips: new Image(), hand: new Image() };
         this.processedImages = { lips: null, hand: null };
         
-        // Cache busting and cross-origin
         const v = Date.now();
         this.images.lips.crossOrigin = 'anonymous';
         this.images.hand.crossOrigin = 'anonymous';
@@ -50,7 +49,7 @@ class GameRenderer {
     }
 
     resize() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2); // Limit DPR to 2 for performance
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
         this.canvas.width = window.innerWidth * dpr;
         this.canvas.height = window.innerHeight * dpr;
         this.ctx.scale(dpr, dpr);
@@ -60,14 +59,24 @@ class GameRenderer {
         this.vanishY = this.h * 0.35;
     }
 
+    // --- RESET FOR GHOSTING FIX ---
+    reset() {
+        this.particles = [];
+        this.hands = [];
+        this.gameOverKisses = [];
+        this.gameOverTextAlpha = 0;
+    }
+
     clear() {
         const ctx = this.ctx;
+        // STRONG CLEAR: Wipe all previous frame data
+        ctx.clearRect(0, 0, this.w, this.h);
+        
         ctx.fillStyle = '#080505';
         ctx.fillRect(0, 0, this.w, this.h);
         
-        // Depth Glow (Simpler for mobile)
         const grad = ctx.createRadialGradient(this.vanishX, this.vanishY, 0, this.vanishX, this.vanishY, this.h * 0.8);
-        grad.addColorStop(0, 'rgba(212, 175, 55, 0.06)');
+        grad.addColorStop(0, 'rgba(212, 175, 55, 0.08)');
         grad.addColorStop(1, 'transparent');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -76,18 +85,25 @@ class GameRenderer {
     drawKiss(kiss, time) {
         const ctx = this.ctx;
         const p = kiss.progress; if (p < 0 || p > 1.2) return;
+        
+        // PERSPECTIVE REFINEMENT: Speeding up as it comes closer
         const perspective = Math.pow(p, 2.5);
         const bx = this.vanishX + (kiss.targetX - this.vanishX) * perspective;
         const by = this.vanishY + (kiss.targetY - this.vanishY) * perspective;
-        const arcHeight = -240 * Math.sin(Math.PI * p) * (1 - p * 0.5);
+        
+        // Dynamic arc: flattens as it approaches screen
+        const arcHeight = -240 * Math.sin(Math.PI * p) * Math.max(0, 1 - p * 1.1);
         const x = bx; const y = by + arcHeight;
-        const size = (10 + 183 * perspective); // Reduced to 1/3 of previous~600
+        
+        // SCALING: Grows significantly more (Frontal Defense)
+        const size = (10 + 280 * perspective); 
 
         ctx.save();
         ctx.translate(x, y);
-        if (p > 0.45) { ctx.shadowColor = '#DC143C'; ctx.shadowBlur = 10; }
-        ctx.rotate(Math.sin(time * 8 + kiss.id) * 0.2 * p);
-        ctx.globalAlpha = Math.min(1, p * 6);
+        
+        // REMOVED SHADOWBLUR: Ghosting culprit #1
+        ctx.rotate(Math.sin(time * 8 + kiss.id) * 0.15 * p);
+        ctx.globalAlpha = Math.min(1, p * 8);
         
         const img = this.processedImages.lips;
         if (img) {
@@ -111,7 +127,7 @@ class GameRenderer {
         const img = this.processedImages.hand;
         if (img) {
             const aspect = img.width / img.height;
-            const bSize = 65 * scale; // Reduced to ~1/3 of previous 180
+            const bSize = 65 * scale;
             ctx.drawImage(img, -(bSize * aspect) / 2, -bSize / 2, bSize * aspect, bSize);
         }
         ctx.restore();
@@ -120,7 +136,6 @@ class GameRenderer {
     startGameOverExplosion(x, y) {
         this.gameOverKisses = [];
         this.gameOverTextAlpha = 0;
-        // Optimization: Reduce particle count slightly for mobile stability (but keep it high)
         for (let i = 0; i < 350; i++) { 
             const angle = Math.random() * Math.PI * 2;
             const speed = 100 + Math.random() * 2000;

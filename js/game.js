@@ -1,6 +1,6 @@
 // ============================================
 // 💋NUMARIN — INDEPENDENT CLOCK LOGIC
-// Resilient performance-based game loop
+// Frontal Defense & Ghosting Fix
 // ============================================
 
 class Game {
@@ -13,7 +13,6 @@ class Game {
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
         this.nextKissId = 0;
 
-        // --- NEW CLOCK ---
         this.baseBPM = 108;
         this.currentBPM = 108;
         this.gameTime = 0; 
@@ -64,18 +63,18 @@ class Game {
         this.renderer.addHand(x, y);
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(50, this.renderer.w * 0.1); // Reduced from 150 to match small lips
+        const hitRadius = Math.max(80, this.renderer.w * 0.15); // Adjusted for performance
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
             const timeDiff = Math.abs(this.gameTime - kiss.targetTime);
-            if (timeDiff > 0.6) return;
+            if (timeDiff > 0.7) return;
 
             const p = kiss.progress;
             const perspective = Math.pow(p, 2.5);
             const bx = this.renderer.vanishX + (kiss.targetX - this.renderer.vanishX) * perspective;
             const by = this.renderer.vanishY + (kiss.targetY - this.renderer.vanishY) * perspective;
-            const arcHeight = -240 * Math.sin(Math.PI * p) * (1 - p * 0.5);
+            const arcHeight = -240 * Math.sin(Math.PI * p) * Math.max(0, 1 - p * 1.1);
             const kx = bx; const ky = by + arcHeight;
 
             const dist = Math.sqrt((x - kx) ** 2 + (y - ky) ** 2);
@@ -93,14 +92,14 @@ class Game {
 
             const p = bestKiss.progress;
             const kx = this.renderer.vanishX + (bestKiss.targetX - this.renderer.vanishX) * Math.pow(p, 2.5);
-            const ky = (this.renderer.vanishY + (bestKiss.targetY - this.renderer.vanishY) * Math.pow(p, 2.5)) + (-240 * Math.sin(Math.PI * p) * (1 - p * 0.5));
+            const ky = (this.renderer.vanishY + (bestKiss.targetY - this.renderer.vanishY) * Math.pow(p, 2.5)) + (-240 * Math.sin(Math.PI * p) * Math.max(0, 1 - p * 1.1));
             this.renderer.addParticles(kx, ky, 35, '#D4AF37');
             this._updateHUD();
         }
     }
 
     start() {
-        console.log("NUMARIN Session Started (Independent Clock)");
+        console.log("NUMARIN Session Started (Frontal Defense Mode)");
         this.state = 'playing';
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
@@ -111,8 +110,9 @@ class Game {
         this.lastBeatProcessed = -1;
         this.gameTime = 0;
 
-        this.renderer.gameOverKisses = [];
-        this.renderer.gameOverTextAlpha = 0;
+        // --- GHOSTING FIX: Explicit local and renderer reset ---
+        this.renderer.reset(); 
+        
         this._showScreen('game-screen');
         this._updateHUD();
 
@@ -125,11 +125,9 @@ class Game {
         
         if (this.state === 'playing') {
             this.gameTime = (timestamp - this.startTime) / 1000;
-            
-            // --- SYNC ENGINE (Replaces Audio onBeat) ---
             const secPerBeat = 60 / this.currentBPM;
             const currentBeat = this.gameTime / secPerBeat;
-            const beatInt = Math.floor(currentBeat * 4); // 16th note resolution
+            const beatInt = Math.floor(currentBeat * 4);
 
             if (beatInt > this.lastBeatProcessed) {
                 this.lastBeatProcessed = beatInt;
@@ -146,7 +144,9 @@ class Game {
                 if (!kiss.chuPlayed && kiss.progress > 0.2) {
                     kiss.chuPlayed = true; try { this.audio.playChu(); } catch (e) {}
                 }
-                if (this.gameTime >= kiss.targetTime + 0.6) {
+                
+                // --- FRONTAL DEFENSE: Failure when passing the camera (progress > 1.05) ---
+                if (kiss.progress > 1.05) {
                     kiss.missed = true; missedKiss = kiss;
                 }
             });
@@ -166,15 +166,12 @@ class Game {
     }
 
     _processBeat(beatNum) {
-        // Play audio motif (Fate)
         const cycleBeat = beatNum % 8;
         const motif = [0, 0.25, 0.5, 0.75, 2.5, 2.75, 3.0, 3.25, 5.0, 5.25, 5.5, 5.75, 6.5, 6.75, 7.0, 7.25];
         if (motif.some(b => Math.abs(b - cycleBeat) < 0.1)) {
             const freq = cycleBeat >= 0.75 && cycleBeat < 1.0 || cycleBeat >= 3.25 && cycleBeat < 4.0 ? 349.23 : 440.00;
             try { this.audio.playFateTone(freq); } catch (e) {}
         }
-
-        // Spawn logic (Lookahead: 4 beats ahead)
         const beatsToTarget = 4;
         const spawnBeat = (beatNum + beatsToTarget) % 8;
         if (motif.some(b => Math.abs(b - spawnBeat) < 0.1)) {
@@ -187,7 +184,7 @@ class Game {
     _spawnKiss(targetTime, travelTime) {
         const margin = 100;
         const tx = margin + Math.random() * (this.renderer.w - margin * 2);
-        const ty = this.renderer.h * 0.7 + Math.random() * (this.renderer.h * 0.25);
+        const ty = this.renderer.h * 0.8 + Math.random() * (this.renderer.h * 0.15);
         this.kisses.push({ id: this.nextKissId++, targetX: tx, targetY: ty, targetTime: targetTime, spawnTime: targetTime - travelTime, progress: 0, hit: false, missed: false, chuPlayed: false });
     }
 
@@ -202,10 +199,11 @@ class Game {
         this.state = 'gameover';
         try { this.audio.playGameOverSound(); } catch (e) {}
         
+        // Game over at camera collision (large p)
         const p = missedKiss.progress;
         const perspective = Math.pow(p, 2.5);
         const kx = this.renderer.vanishX + (missedKiss.targetX - this.renderer.vanishX) * perspective;
-        const ky = (this.renderer.vanishY + (missedKiss.targetY - this.renderer.vanishY) * perspective) + (-240 * Math.sin(Math.PI * p) * (1 - p * 0.5));
+        const ky = (this.renderer.vanishY + (missedKiss.targetY - this.renderer.vanishY) * perspective);
         
         this.renderer.startGameOverExplosion(kx, ky);
         setTimeout(() => { if (this.state === 'gameover') this._showScreen('gameover-screen'); }, 2200);

@@ -1,6 +1,6 @@
 // ============================================
 // 💋NUMARIN — PERFORMANCE LOGIC
-// Branding: NUMARIN | Mission Over Sync
+// Branding: NUMARIN | Safari & iOS Touch Fix
 // ============================================
 
 class Game {
@@ -28,18 +28,38 @@ class Game {
     _setupButtons() {
         const startBtn = document.getElementById('btn-start');
         const retryBtn = document.getElementById('btn-retry');
-        const handleStart = () => { if (this.state === 'title') this.startFromTitle(); };
-        const handleRetry = () => { if (this.state === 'gameover') this.restart(); };
-        startBtn.addEventListener('click', handleStart);
-        startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(); }, { passive: false });
-        retryBtn.addEventListener('click', handleRetry);
-        retryBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleRetry(); }, { passive: false });
+        
+        // --- Safari/iOS Specific Start Handler ---
+        const handleStart = (e) => {
+            if (this.state === 'title') {
+                // Ensure audio is initialized and unlocked inside the same user gesture
+                this.audio.init(); 
+                this.audio.unlock(); // Silent play for Safari
+                this.start();
+            }
+        };
+
+        const handleRetry = (e) => {
+            if (this.state === 'gameover') {
+                this.audio.resume();
+                this.restart();
+            }
+        };
+
+        // Use touchstart for immediate response on mobile
+        startBtn.addEventListener('touchstart', (e) => { handleStart(e); }, { passive: true });
+        startBtn.addEventListener('click', (e) => { handleStart(e); });
+        
+        retryBtn.addEventListener('touchstart', (e) => { handleRetry(e); }, { passive: true });
+        retryBtn.addEventListener('click', (e) => { handleRetry(e); });
     }
 
     _setupInput() {
         const handleTap = (x, y) => { if (this.state === 'playing') this._handleTap(x, y); };
+        // iOS requires touchstart for prompt hit response
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            // Prevent scrolling/zooming during play
+            if (this.state === 'playing') e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const t = e.changedTouches[i];
                 handleTap(t.clientX, t.clientY);
@@ -53,12 +73,12 @@ class Game {
         const audioTime = this.audio.getTime();
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(140, this.renderer.w * 0.28);
+        const hitRadius = Math.max(150, this.renderer.w * 0.32); // Slightly larger for mobile fingers
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
             const timeDiff = Math.abs(audioTime - kiss.targetTime);
-            if (timeDiff > 0.5) return;
+            if (timeDiff > 0.6) return; // Generous 600ms window for mobile
 
             const p = kiss.progress;
             const perspective = Math.pow(p, 2.5);
@@ -87,8 +107,6 @@ class Game {
             this._updateHUD();
         }
     }
-
-    startFromTitle() { this.audio.init(); this.audio.resume(); this.start(); }
 
     start() {
         this.state = 'playing';
@@ -150,7 +168,7 @@ class Game {
                 const timeRemaining = kiss.targetTime - audioTime;
                 kiss.progress = Math.max(0, Math.min(1.2, 1.0 - (timeRemaining / travelTime)));
                 if (!kiss.chuPlayed && kiss.progress > 0.2) { kiss.chuPlayed = true; this.audio.playChu(); }
-                if (audioTime >= kiss.targetTime + 0.5) { kiss.missed = true; missedKiss = kiss; }
+                if (audioTime >= kiss.targetTime + 0.6) { kiss.missed = true; missedKiss = kiss; } // Generous mobile buffer
             });
             if (missedKiss) { this._gameOver(missedKiss); }
             this._updateHUD();
@@ -180,7 +198,6 @@ class Game {
         const kx = this.renderer.vanishX + (missedKiss.targetX - this.renderer.vanishX) * perspective;
         const ky = (this.renderer.vanishY + (missedKiss.targetY - this.renderer.vanishY) * perspective) + (-240 * Math.sin(Math.PI * p) * (1 - p * 0.5));
         this.renderer.startGameOverExplosion(kx, ky);
-        // Wait 2.2 seconds to show the HTML screen so user can see the full explosion
         setTimeout(() => { if (this.state === 'gameover') this._showScreen('gameover-screen'); }, 2200);
     }
 

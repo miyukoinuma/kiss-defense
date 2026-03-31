@@ -11,6 +11,26 @@ class GameRenderer {
         this.particles = [];
         this.hands = [];      // tap hand animations
         this.bgParticles = []; // gold background particles
+        
+        // --- Image Assets ---
+        this.images = {
+            lips: new Image(),
+            hand: new Image()
+        };
+        this.images.lips.src = 'assets/lips.png';
+        this.images.hand.src = 'assets/hand.png';
+        this.imagesLoaded = false;
+        
+        const loadPromises = Object.values(this.images).map(img => {
+            return new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve; // Continue anyway
+            });
+        });
+        Promise.all(loadPromises).then(() => {
+            this.imagesLoaded = true;
+        });
+
         this._initBgParticles();
     }
 
@@ -41,7 +61,6 @@ class GameRenderer {
 
     clear() {
         const ctx = this.ctx;
-        // Deep black with subtle gradient
         const grad = ctx.createRadialGradient(
             this.vanishX, this.vanishY, 0,
             this.vanishX, this.vanishY, this.h * 0.8
@@ -55,7 +74,6 @@ class GameRenderer {
 
     drawBackground(time) {
         const ctx = this.ctx;
-        // Subtle perspective tunnel lines
         ctx.save();
         ctx.strokeStyle = 'rgba(212, 175, 55, 0.03)';
         ctx.lineWidth = 1;
@@ -70,7 +88,6 @@ class GameRenderer {
         }
         ctx.restore();
 
-        // Gold floating particles
         ctx.save();
         this.bgParticles.forEach(p => {
             const px = (p.x / 1000) * this.w;
@@ -85,18 +102,6 @@ class GameRenderer {
             ctx.fill();
         });
         ctx.restore();
-
-        // Vanishing point glow
-        ctx.save();
-        const vpGrad = ctx.createRadialGradient(
-            this.vanishX, this.vanishY, 0,
-            this.vanishX, this.vanishY, 60
-        );
-        vpGrad.addColorStop(0, 'rgba(220, 20, 60, 0.15)');
-        vpGrad.addColorStop(1, 'rgba(220, 20, 60, 0)');
-        ctx.fillStyle = vpGrad;
-        ctx.fillRect(this.vanishX - 60, this.vanishY - 60, 120, 120);
-        ctx.restore();
     }
 
     drawKiss(kiss, time) {
@@ -104,31 +109,36 @@ class GameRenderer {
         const p = kiss.progress;
         if (p < 0 || p > 1.2) return;
 
-        // 3D perspective interpolation
         const perspective = Math.pow(p, 2.2);
         const x = this.vanishX + (kiss.targetX - this.vanishX) * perspective;
         const y = this.vanishY + (kiss.targetY - this.vanishY) * perspective;
-        const size = 8 + 52 * perspective;
+        // Size significantly increased
+        const size = 15 + 140 * perspective;
 
         ctx.save();
         ctx.translate(x, y);
 
-        // Glow behind kiss
-        if (p > 0.3) {
-            ctx.shadowColor = 'rgba(220, 20, 60, 0.5)';
-            ctx.shadowBlur = 10 + perspective * 20;
-        }
+        // Strong Red Glow for Lips
+        ctx.shadowColor = 'rgba(220, 20, 60, 0.8)';
+        ctx.shadowBlur = 15 + perspective * 30;
 
-        // Wobble animation
-        const wobble = Math.sin(time * 8 + kiss.id * 2) * 3 * perspective;
+        const wobble = Math.sin(time * 8 + kiss.id * 2) * 5 * perspective;
         ctx.rotate(wobble * 0.03);
 
-        // Draw 💋 emoji
-        ctx.font = `${size}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.globalAlpha = Math.min(1, p * 3);
-        ctx.fillText('💋', wobble, 0);
+        ctx.globalAlpha = Math.min(1, p * 4);
+
+        if (this.imagesLoaded) {
+            const img = this.images.lips;
+            const aspect = img.width / img.height;
+            const iw = size * aspect;
+            const ih = size;
+            ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
+        } else {
+            ctx.font = `${size}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💋\uFE0F', 0, 0);
+        }
 
         ctx.restore();
     }
@@ -140,31 +150,59 @@ class GameRenderer {
         ctx.save();
         ctx.translate(hand.x, hand.y);
 
-        // Scale: starts small, grows, then shrinks
         const t = 1 - hand.life;
         let scale;
-        if (t < 0.2) {
-            scale = 0.4 + (t / 0.2) * 0.9; // 0.4 → 1.3
+        let offsetZ;
+
+        if (t < 0.15) {
+            // Thrust forward surge
+            const surge = t / 0.15;
+            scale = 0.5 + surge * 1.5; 
+            offsetZ = -30 * surge * (2 - surge);
         } else {
-            scale = 1.3 - ((t - 0.2) / 0.8) * 0.6; // 1.3 → 0.7
+            // Slower recoil
+            const fade = (t - 0.15) / 0.85;
+            scale = 2.0 - fade * 0.8;
+            offsetZ = -30 + fade * 15;
         }
 
-        ctx.globalAlpha = hand.life;
+        ctx.globalAlpha = Math.min(1, hand.life * 1.5);
+        ctx.translate(0, offsetZ);
 
-        // Push-forward effect: slight upward shift
-        const pushY = -15 * (t < 0.3 ? t / 0.3 : 1);
-        ctx.translate(0, pushY);
+        if (this.imagesLoaded) {
+            const img = this.images.hand;
+            const aspect = img.width / img.height;
+            const baseSize = 130 * scale;
+            const iw = baseSize * aspect;
+            const ih = baseSize;
+            
+            // Thrust Aura
+            if (t < 0.25) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.shadowColor = '#D4AF37';
+                ctx.shadowBlur = 40 * (1 - t / 0.25);
+                ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
+                ctx.restore();
+            }
 
-        // Draw hand emoji in skin color
-        ctx.font = `${65 * scale}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+            ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
+        } else {
+            ctx.font = `${90 * scale}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✋', 0, 0);
+        }
 
-        // Glow effect
-        ctx.shadowColor = 'rgba(255, 220, 180, 0.6)';
-        ctx.shadowBlur = 15 * hand.life;
-
-        ctx.fillText('✋', 0, 0);
+        // --- Shockwave Circle ---
+        if (t < 0.45) {
+            ctx.beginPath();
+            const ringSize = (t / 0.45) * 180;
+            ctx.arc(0, 0, ringSize, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(212, 175, 55, ${0.6 * (1 - t / 0.45)})`;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
 
         ctx.restore();
     }
@@ -176,30 +214,28 @@ class GameRenderer {
     addParticles(x, y, count, color = '#D4AF37') {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = 2 + Math.random() * 6;
+            const speed = 4 + Math.random() * 12;
             this.particles.push({
                 x, y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 life: 1.0,
-                decay: 0.015 + Math.random() * 0.025,
-                size: 1 + Math.random() * 4,
+                decay: 0.02 + Math.random() * 0.04,
+                size: 2 + Math.random() * 6,
                 color
             });
         }
     }
 
     updateEffects(dt) {
-        // Update hands
         this.hands = this.hands.filter(h => {
-            h.life -= dt * 3;
+            h.life -= dt * 2.8;
             return h.life > 0;
         });
-        // Update particles
         this.particles = this.particles.filter(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.12;
+            p.vy += 0.15;
             p.life -= p.decay;
             return p.life > 0;
         });
@@ -219,24 +255,17 @@ class GameRenderer {
         ctx.restore();
     }
 
-    // Render one full frame
     render(state) {
         const { kisses, time, dt } = state;
         this.clear();
         this.drawBackground(time);
-
-        // Draw kisses sorted by depth (furthest first)
+        
         const activeKisses = kisses.filter(k => !k.hit && !k.missed);
         activeKisses.sort((a, b) => a.progress - b.progress);
         activeKisses.forEach(k => this.drawKiss(k, time));
 
-        // Draw hit effects (hands)
         this.hands.forEach(h => this.drawHand(h));
-
-        // Draw particles
         this.drawParticles();
-
-        // Update animations
         this.updateEffects(dt || 0.016);
     }
 }

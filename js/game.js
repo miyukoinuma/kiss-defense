@@ -1,6 +1,6 @@
 // ============================================
 // 💋 KISS DEFENSE — GAME LOGIC
-// Endless mode with gradual acceleration
+// High-Tempo (BPM 160) + Precise Audio Sync
 // ============================================
 
 class Game {
@@ -12,70 +12,73 @@ class Game {
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
         this.nextKissId = 0;
-        this.startTime = 0;
         this.gameTime = 0;
         this.lastFrameTime = 0;
-        this.baseBPM = 80;
-        this.currentBPM = 80;
-        this.approachTime = 3.0; // seconds for kiss to travel
+        
+        // --- Difficulty & Timing ---
+        this.baseBPM = 160; // Normal tempo for Can-Can
+        this.currentBPM = 160;
+        this.approachTime = 2.0; // Seconds for kiss to reach target (slightly faster for 160bpm)
         this.kissesPerBeat = 1;
-        this.lastBeatKissed = -1;
+        this.lastBeatSpawned = -1;
+
         this._setupInput();
         this._setupButtons();
     }
 
     _setupButtons() {
-        document.getElementById('btn-start').addEventListener('click', () => this.startFromTitle());
-        document.getElementById('btn-start').addEventListener('touchend', (e) => {
-            e.preventDefault(); this.startFromTitle();
-        });
-        document.getElementById('btn-retry').addEventListener('click', () => this.restart());
-        document.getElementById('btn-retry').addEventListener('touchend', (e) => {
-            e.preventDefault(); this.restart();
-        });
+        const startBtn = document.getElementById('btn-start');
+        const retryBtn = document.getElementById('btn-retry');
+
+        const handleStart = () => { if (this.state === 'title') this.startFromTitle(); };
+        const handleRetry = () => { if (this.state === 'gameover') this.restart(); };
+
+        startBtn.addEventListener('click', handleStart);
+        startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(); }, { passive: false });
+        retryBtn.addEventListener('click', handleRetry);
+        retryBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleRetry(); }, { passive: false });
     }
 
     _setupInput() {
-        // Touch input
+        const handleTap = (x, y) => {
+            if (this.state !== 'playing') return;
+            this._handleTap(x, y);
+        };
+
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (this.state !== 'playing') return;
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const t = e.changedTouches[i];
-                this._handleTap(t.clientX, t.clientY);
+                handleTap(t.clientX, t.clientY);
             }
         }, { passive: false });
 
-        // Mouse fallback (for testing on PC)
         this.canvas.addEventListener('mousedown', (e) => {
-            if (this.state !== 'playing') return;
-            this._handleTap(e.clientX, e.clientY);
+            handleTap(e.clientX, e.clientY);
         });
     }
 
     _handleTap(x, y) {
-        // Show hand at tap position
         this.renderer.addHand(x, y);
 
-        // Find closest hittable kiss
+        const audioTime = this.audio.getTime();
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(60, this.renderer.w * 0.12); // generous hit radius
+        const hitRadius = Math.max(70, this.renderer.w * 0.15); // Large hit area for mobile
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
-            if (kiss.progress < 0.45 || kiss.progress > 1.05) return;
+            // Timing window: must be close to targetTime (progress near 1.0)
+            const timeDiff = Math.abs(audioTime - kiss.targetTime);
+            if (timeDiff > 0.4) return; // Must be within 400ms of the beat
 
-            // Calculate screen position of kiss
+            // Screen position check
             const perspective = Math.pow(kiss.progress, 2.2);
             const kx = this.renderer.vanishX + (kiss.targetX - this.renderer.vanishX) * perspective;
             const ky = this.renderer.vanishY + (kiss.targetY - this.renderer.vanishY) * perspective;
-            const size = 8 + 52 * perspective;
+            const size = 15 + 140 * perspective;
 
-            const dx = x - kx;
-            const dy = y - ky;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
+            const dist = Math.sqrt((x - kx) ** 2 + (y - ky) ** 2);
             if (dist < hitRadius + size * 0.5 && dist < bestDist) {
                 bestDist = dist;
                 bestKiss = kiss;
@@ -88,17 +91,17 @@ class Game {
             this.stats.combo++;
             this.stats.maxCombo = Math.max(this.stats.maxCombo, this.stats.combo);
 
-            // Score with combo multiplier
-            const comboMultiplier = 1 + Math.floor(this.stats.combo / 5) * 0.2;
+            const comboMultiplier = 1 + Math.floor(this.stats.combo / 10) * 0.2;
             this.stats.score += Math.round(100 * comboMultiplier);
 
-            // Effects
             this.audio.playBlock();
-            const perspective = Math.pow(bestKiss.progress, 2.2);
-            const kx = this.renderer.vanishX + (bestKiss.targetX - this.renderer.vanishX) * perspective;
-            const ky = this.renderer.vanishY + (bestKiss.targetY - this.renderer.vanishY) * perspective;
-            this.renderer.addParticles(kx, ky, 15, '#D4AF37');
-            this.renderer.addParticles(kx, ky, 8, '#DC143C');
+            
+            // Effect at hit position
+            const p = Math.pow(bestKiss.progress, 2.2);
+            const kx = this.renderer.vanishX + (bestKiss.targetX - this.renderer.vanishX) * p;
+            const ky = this.renderer.vanishY + (bestKiss.targetY - this.renderer.vanishY) * p;
+            this.renderer.addParticles(kx, ky, 22, '#D4AF37');
+            this.renderer.addParticles(kx, ky, 12, '#DC143C');
 
             this._updateHUD();
         }
@@ -120,66 +123,65 @@ class Game {
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
         this.nextKissId = 0;
-        this.gameTime = 0;
         this.currentBPM = this.baseBPM;
-        this.approachTime = 3.0;
-        this.kissesPerBeat = 1;
-        this.lastBeatKissed = -1;
+        this.approachTime = 2.0; 
+        this.lastBeatSpawned = -1;
 
         this._showScreen('game-screen');
         this._updateHUD();
 
-        // Setup audio beat callback to spawn kisses
-        this.audio.onBeat = (beatNum, time) => {
-            // Spawn on whole beats only
-            if (beatNum % 1 !== 0) return;
-            if (beatNum <= this.lastBeatKissed) return;
-            this.lastBeatKissed = beatNum;
-            this._spawnKisses(beatNum);
+        // --- RHYTHM SYNC SPAWNING ---
+        this.audio.onBeat = (beatNum, targetTime) => {
+            // Spawn kiss on every beat (or more as difficulty increases)
+            if (beatNum <= this.lastBeatSpawned) return;
+            this.lastBeatSpawned = beatNum;
+            
+            // Randomly decide counts based on current difficulty
+            const baseCount = Math.floor(this.kissesPerBeat);
+            const extraChance = this.kissesPerBeat % 1;
+            const count = baseCount + (Math.random() < extraChance ? 1 : 0);
+
+            for (let i = 0; i < count; i++) {
+                this._spawnKiss(targetTime);
+            }
         };
 
         this.audio.startMusic(this.currentBPM);
-        this.startTime = performance.now();
-        this.lastFrameTime = this.startTime;
+        const now = performance.now();
+        this.startTime = now;
+        this.lastFrameTime = now;
 
         requestAnimationFrame((t) => this._gameLoop(t));
     }
 
-    _spawnKisses(beatNum) {
-        const count = this.kissesPerBeat + (Math.random() < 0.3 ? 1 : 0);
-        for (let i = 0; i < count; i++) {
-            // Random target position, avoiding edges
-            const margin = 60;
-            const tx = margin + Math.random() * (this.renderer.w - margin * 2);
-            const ty = this.renderer.h * 0.45 + Math.random() * (this.renderer.h * 0.45);
+    _spawnKiss(targetTime) {
+        const margin = 60;
+        const tx = margin + Math.random() * (this.renderer.w - margin * 2);
+        const ty = this.renderer.h * 0.4 + Math.random() * (this.renderer.h * 0.5);
 
-            this.kisses.push({
-                id: this.nextKissId++,
-                targetX: tx,
-                targetY: ty,
-                spawnTime: performance.now(),
-                progress: 0,
-                hit: false,
-                missed: false,
-                chuPlayed: false
-            });
-        }
+        this.kisses.push({
+            id: this.nextKissId++,
+            targetX: tx,
+            targetY: ty,
+            targetTime: targetTime, // Time in AudioContext when it should hit
+            progress: 0,
+            hit: false,
+            missed: false,
+            chuPlayed: false
+        });
     }
 
-    _updateDifficulty() {
-        // Accelerate over time
-        const elapsed = this.gameTime;
-        // BPM: 80 → increases by 4 every 12 seconds
-        this.currentBPM = this.baseBPM + Math.floor(elapsed / 12) * 4;
-        this.currentBPM = Math.min(this.currentBPM, 200);
+    _updateDifficulty(elapsed) {
+        // BPM 160 start, increase slightly every 15s
+        this.currentBPM = this.baseBPM + Math.floor(elapsed / 15) * 4;
+        this.currentBPM = Math.min(this.currentBPM, 230);
         this.audio.setBPM(this.currentBPM);
 
-        // Approach time: 3.0 → decreases
-        this.approachTime = Math.max(1.0, 3.0 - elapsed * 0.02);
+        // Faster approach: 2.0s -> 1.2s
+        this.approachTime = Math.max(1.2, 2.0 - elapsed * 0.015);
 
-        // Kisses per beat: increases every 25 seconds
-        this.kissesPerBeat = 1 + Math.floor(elapsed / 25);
-        this.kissesPerBeat = Math.min(this.kissesPerBeat, 5);
+        // Density: 1 -> 4
+        this.kissesPerBeat = 1 + Math.floor(elapsed / 30) * 0.5;
     }
 
     _gameLoop(timestamp) {
@@ -187,35 +189,39 @@ class Game {
 
         const dt = (timestamp - this.lastFrameTime) / 1000;
         this.lastFrameTime = timestamp;
-        this.gameTime = (timestamp - this.startTime) / 1000;
+        
+        const audioTime = this.audio.getTime();
+        const elapsed = (timestamp - this.startTime) / 1000;
+        this.gameTime = elapsed;
 
-        this._updateDifficulty();
+        this._updateDifficulty(elapsed);
 
-        // Update kiss progress
         let missed = false;
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
-            const elapsed = (timestamp - kiss.spawnTime) / 1000;
-            kiss.progress = elapsed / this.approachTime;
 
-            // Play chu sound when kiss becomes visible
-            if (!kiss.chuPlayed && kiss.progress > 0.05) {
+            // PRECISE PROGRESS CALCULATION
+            // progress = 1.0 when audioTime reaches targetTime
+            const timeUntilHit = kiss.targetTime - audioTime;
+            kiss.progress = 1.0 - (timeUntilHit / this.approachTime);
+
+            // Play sound effect when kiss starts zooming
+            if (!kiss.chuPlayed && kiss.progress > 0.1) {
                 kiss.chuPlayed = true;
                 this.audio.playChu();
             }
 
-            // Check if kiss got through
-            if (kiss.progress >= 1.0) {
+            // GAME OVER CONDITION: exact hit point
+            if (audioTime >= kiss.targetTime) {
                 kiss.missed = true;
                 missed = true;
             }
         });
 
-        // Clean up old hit kisses
+        // Filter out finished notes
         this.kisses = this.kisses.filter(k => {
-            if (k.hit && k.progress > 1.5) return false;
-            if (k.missed && !missed) return false;
-            return true;
+            if (k.hit && k.progress > 1.3) return false;
+            return !k.missed; 
         });
 
         if (missed) {
@@ -223,13 +229,10 @@ class Game {
             return;
         }
 
-        // Update HUD
         this._updateHUD();
-
-        // Render
         this.renderer.render({
             kisses: this.kisses,
-            time: this.gameTime,
+            time: elapsed,
             dt: dt
         });
 
@@ -247,34 +250,27 @@ class Game {
         this.audio.stopMusic();
         this.audio.playGameOverSound();
 
-        // Show game over screen
         setTimeout(() => {
             this._showScreen('gameover-screen');
-
-            // Fill screen with 💋
             const container = document.getElementById('gameover-kisses');
             container.innerHTML = '';
-            const count = 80;
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < 90; i++) {
                 const el = document.createElement('div');
                 el.className = 'gameover-kiss-item';
                 el.textContent = '💋';
                 el.style.left = Math.random() * 95 + '%';
-                el.style.top = Math.random() * 90 + '%';
-                el.style.fontSize = (1.2 + Math.random() * 3) + 'rem';
-                el.style.animationDelay = (Math.random() * 1.5) + 's';
+                el.style.top = Math.random() * 92 + '%';
+                el.style.fontSize = (1.5 + Math.random() * 3.5) + 'rem';
+                el.style.animationDelay = (Math.random() * 2) + 's';
                 container.appendChild(el);
             }
 
-            // Show stats
             document.getElementById('gameover-score').textContent = this.stats.score.toLocaleString();
             document.getElementById('gameover-blocked').textContent = this.stats.blocked;
             document.getElementById('gameover-maxcombo').textContent = this.stats.maxCombo;
-            const secs = Math.floor(this.gameTime);
-            const min = Math.floor(secs / 60);
-            const sec = String(secs % 60).padStart(2, '0');
-            document.getElementById('gameover-time').textContent = `${min}:${sec}`;
-        }, 600);
+            const s = Math.floor(this.gameTime);
+            document.getElementById('gameover-time').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        }, 700);
     }
 
     restart() {
@@ -283,7 +279,6 @@ class Game {
     }
 }
 
-// --- Initialize ---
 let game;
 document.addEventListener('DOMContentLoaded', () => {
     game = new Game();

@@ -64,7 +64,7 @@ class Game {
         this.renderer.addHand(x, y);
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(150, this.renderer.w * 0.32);
+        const hitRadius = Math.max(50, this.renderer.w * 0.1); // Reduced from 150 to match small lips
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;

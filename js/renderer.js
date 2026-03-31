@@ -81,11 +81,11 @@ class GameRenderer {
         const by = this.vanishY + (kiss.targetY - this.vanishY) * perspective;
         const arcHeight = -240 * Math.sin(Math.PI * p) * (1 - p * 0.5);
         const x = bx; const y = by + arcHeight;
-        const size = 30 + 550 * perspective;
+        const size = (10 + 183 * perspective); // Reduced to 1/3 of previous~600
 
         ctx.save();
         ctx.translate(x, y);
-        if (p > 0.45) { ctx.shadowColor = '#DC143C'; ctx.shadowBlur = 30; }
+        if (p > 0.45) { ctx.shadowColor = '#DC143C'; ctx.shadowBlur = 10; }
         ctx.rotate(Math.sin(time * 8 + kiss.id) * 0.2 * p);
         ctx.globalAlpha = Math.min(1, p * 6);
         
@@ -111,7 +111,7 @@ class GameRenderer {
         const img = this.processedImages.hand;
         if (img) {
             const aspect = img.width / img.height;
-            const bSize = 180 * scale;
+            const bSize = 65 * scale; // Reduced to ~1/3 of previous 180
             ctx.drawImage(img, -(bSize * aspect) / 2, -bSize / 2, bSize * aspect, bSize);
         }
         ctx.restore();

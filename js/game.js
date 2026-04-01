@@ -1,6 +1,6 @@
 // ============================================
-// 💋NUMARIN — GLOBAL LEADERBOARD ENGINE (dreamlo)
-// Resilient & Multi-device Sync
+// 💋NUMARIN — Lv8 REVERSION + SCORE FIX
+// Pure Gameplay, No Global Sync
 // ============================================
 
 class Game {
@@ -12,12 +12,7 @@ class Game {
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
         this.nextKissId = 0;
-        this.playerName = 'GUEST';
-
-        // --- dreamlo Configuration ---
-        // NOTE: These are public/private keys for the NUMARIN global board.
-        this.dreamloPublicK = "660a5f1e8f407b122822a98f";
-        this.dreamloPrivateK = "m3W-Cj-rME-H6p-Z9W-ZswW0-kEqV-13009pC9Q7vXyA"; 
+        this.playerName = 'YOU';
 
         this.baseBPM = 108;
         this.currentBPM = 108;
@@ -28,9 +23,6 @@ class Game {
 
         this._setupInput();
         this._setupButtons();
-        
-        // Initial leaderboard load
-        this._updateLeaderboardUI();
     }
 
     _setupButtons() {
@@ -39,8 +31,6 @@ class Game {
         
         const handleStart = (e) => {
             if (this.state === 'title') {
-                const nameInput = document.getElementById('player-name');
-                this.playerName = nameInput.value.trim().substring(0, 10).toUpperCase() || 'ANONYMOUS';
                 try { this.audio.init(); } catch (e) {} 
                 this.start();
             }
@@ -74,12 +64,14 @@ class Game {
         this.renderer.addHand(x, y);
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(120, this.renderer.w * 0.22); // Increased hit radius for mobile
+        
+        // REVERTED to Lv8 Hit Radius (More strict/precise feel)
+        const hitRadius = Math.max(80, this.renderer.w * 0.15); 
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
             const timeDiff = Math.abs(this.gameTime - kiss.targetTime);
-            if (timeDiff > 0.8) return; // More lenient timing
+            if (timeDiff > 0.7) return; // REVERTED to Lv8 timing window
 
             const p = kiss.progress;
             const perspective = Math.pow(p, 2.5);
@@ -110,7 +102,7 @@ class Game {
     }
 
     start() {
-        console.log("NUMARIN Session Started (World Ranking Enabled)");
+        console.log("NUMARIN Session Started (Lv8 Reversion Mode)");
         this.state = 'playing';
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
@@ -213,8 +205,7 @@ class Game {
         
         this.renderer.startGameOverExplosion(kx, ky);
 
-        // --- UPDATE RESULT DISPLAY (FIX SCORE 0) ---
-        // Force update DOM immediately
+        // --- SCORE FIX: Force Update result screen immediately ---
         const finalScore = this.stats.score;
         document.getElementById('gameover-score').textContent = finalScore.toLocaleString();
         document.getElementById('gameover-blocked').textContent = this.stats.blocked;
@@ -224,66 +215,8 @@ class Game {
         const minutes = Math.floor(duration / 60);
         const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
         document.getElementById('gameover-time').textContent = `${minutes}:${seconds}`;
-
-        // Global Save & Refresh
-        this._saveScoreToCloud(this.playerName, finalScore);
         
-        setTimeout(() => { 
-            if (this.state === 'gameover') this._showScreen('gameover-screen'); 
-        }, 2200);
-    }
-
-    // --- dreamlo World Leaderboard Integration ---
-    async _saveScoreToCloud(name, score) {
-        if (score <= 0) return;
-        const url = `https://www.dreamlo.com/lb/${this.dreamloPrivateK}/add/${encodeURIComponent(name)}/${score}`;
-        try {
-            await fetch(url);
-            this._updateLeaderboardUI(); // Refresh list after saving
-        } catch (e) {
-            console.error("Cloud save failed:", e);
-        }
-    }
-
-    async _updateLeaderboardUI() {
-        const list = document.getElementById('leaderboard-list');
-        if (!list) return;
-
-        // Cache busting to ensure fresh global data
-        const url = `https://www.dreamlo.com/lb/${this.dreamloPublicK}/json?cache=${Date.now()}`;
-        
-        try {
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error("Server response not OK");
-            
-            const data = await resp.json();
-            
-            // dreamlo nested structure handles empty boards differently
-            let scores = [];
-            if (data && data.dreamlo && data.dreamlo.leaderboard) {
-                const entry = data.dreamlo.leaderboard.entry;
-                if (entry) {
-                    scores = Array.isArray(entry) ? entry : [entry];
-                }
-            }
-
-            if (scores.length === 0) {
-                list.innerHTML = '<p style="opacity: 0.3; font-size: 0.8rem; letter-spacing: 0.1em;">NO RECORDS YET</p>';
-                return;
-            }
-
-            list.innerHTML = scores.slice(0, 5).map((s, i) => `
-                <div class="leaderboard-item ${s.name === this.playerName && parseInt(s.score) === this.stats.score ? 'current-player' : ''}">
-                    <span class="leaderboard-rank">#${i + 1}</span>
-                    <span class="leaderboard-name">${s.name}</span>
-                    <span class="leaderboard-score">${parseInt(s.score).toLocaleString()}</span>
-                </div>
-            `).join('');
-            
-        } catch (e) {
-            console.error("NUMARIN Leaderboard Sync Error:", e);
-            list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">SYNC FAILED (OFFLINE)</p>';
-        }
+        setTimeout(() => { if (this.state === 'gameover') this._showScreen('gameover-screen'); }, 2200);
     }
 
     _showScreen(id) {

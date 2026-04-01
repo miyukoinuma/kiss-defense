@@ -247,17 +247,30 @@ class Game {
 
     async _updateLeaderboardUI() {
         const list = document.getElementById('leaderboard-list');
-        list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">SYNCING GLOBAL RECORDS...</p>';
+        if (!list) return;
+
+        // Cache busting to ensure fresh global data
+        const url = `https://www.dreamlo.com/lb/${this.dreamloPublicK}/json?cache=${Date.now()}`;
         
-        const url = `https://www.dreamlo.com/lb/${this.dreamloPublicK}/json`;
         try {
             const resp = await fetch(url);
-            const data = await resp.json();
-            let scores = data.dreamlo.leaderboard.entry;
+            if (!resp.ok) throw new Error("Server response not OK");
             
-            // Handle single entry or empty case
-            if (!scores) scores = [];
-            else if (!Array.isArray(scores)) scores = [scores];
+            const data = await resp.json();
+            
+            // dreamlo nested structure handles empty boards differently
+            let scores = [];
+            if (data && data.dreamlo && data.dreamlo.leaderboard) {
+                const entry = data.dreamlo.leaderboard.entry;
+                if (entry) {
+                    scores = Array.isArray(entry) ? entry : [entry];
+                }
+            }
+
+            if (scores.length === 0) {
+                list.innerHTML = '<p style="opacity: 0.3; font-size: 0.8rem; letter-spacing: 0.1em;">NO RECORDS YET</p>';
+                return;
+            }
 
             list.innerHTML = scores.slice(0, 5).map((s, i) => `
                 <div class="leaderboard-item ${s.name === this.playerName && parseInt(s.score) === this.stats.score ? 'current-player' : ''}">
@@ -265,9 +278,11 @@ class Game {
                     <span class="leaderboard-name">${s.name}</span>
                     <span class="leaderboard-score">${parseInt(s.score).toLocaleString()}</span>
                 </div>
-            `).join('') || '<p style="opacity: 0.3; font-size: 0.8rem;">NO RECORDS YET</p>';
+            `).join('');
+            
         } catch (e) {
-            list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">OFFLINE MODE</p>';
+            console.error("NUMARIN Leaderboard Sync Error:", e);
+            list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">SYNC FAILED (OFFLINE)</p>';
         }
     }
 

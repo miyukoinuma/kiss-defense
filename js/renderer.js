@@ -110,7 +110,8 @@ class GameRenderer {
         const t = 1 - hand.life;
         const scale = t < 0.15 ? 0.6 + (t / 0.15) * 1.7 : 2.3 - ((t - 0.15) / 0.85) * 1.1;
         ctx.globalAlpha = Math.min(1, hand.life * 2.5);
-        ctx.translate(0, -65 * Math.sin(t * Math.PI));
+        // REDUCED BOUNCE: From 65 down to 30 to prevent "flying hand" feel
+        ctx.translate(0, -30 * Math.sin(t * Math.PI));
         const img = this.processedImages.hand;
         if (img) {
             const aspect = img.width / img.height;

@@ -74,12 +74,12 @@ class Game {
         this.renderer.addHand(x, y);
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(80, this.renderer.w * 0.15);
+        const hitRadius = Math.max(120, this.renderer.w * 0.22); // Increased hit radius for mobile
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
             const timeDiff = Math.abs(this.gameTime - kiss.targetTime);
-            if (timeDiff > 0.7) return;
+            if (timeDiff > 0.8) return; // More lenient timing
 
             const p = kiss.progress;
             const perspective = Math.pow(p, 2.5);

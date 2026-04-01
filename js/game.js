@@ -1,6 +1,6 @@
 // ============================================
-// 💋NUMARIN — INDEPENDENT CLOCK LOGIC
-// Frontal Defense & Ghosting Fix
+// 💋NUMARIN — GLOBAL LEADERBOARD ENGINE (dreamlo)
+// Resilient & Multi-device Sync
 // ============================================
 
 class Game {
@@ -12,6 +12,12 @@ class Game {
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
         this.nextKissId = 0;
+        this.playerName = 'GUEST';
+
+        // --- dreamlo Configuration ---
+        // NOTE: These are public/private keys for the NUMARIN global board.
+        this.dreamloPublicK = "660a5f1e8f407b122822a98f";
+        this.dreamloPrivateK = "m3W-Cj-rME-H6p-Z9W-ZswW0-kEqV-13009pC9Q7vXyA"; 
 
         this.baseBPM = 108;
         this.currentBPM = 108;
@@ -22,6 +28,9 @@ class Game {
 
         this._setupInput();
         this._setupButtons();
+        
+        // Initial leaderboard load
+        this._updateLeaderboardUI();
     }
 
     _setupButtons() {
@@ -30,6 +39,8 @@ class Game {
         
         const handleStart = (e) => {
             if (this.state === 'title') {
+                const nameInput = document.getElementById('player-name');
+                this.playerName = nameInput.value.trim().substring(0, 10).toUpperCase() || 'ANONYMOUS';
                 try { this.audio.init(); } catch (e) {} 
                 this.start();
             }
@@ -63,7 +74,7 @@ class Game {
         this.renderer.addHand(x, y);
         let bestKiss = null;
         let bestDist = Infinity;
-        const hitRadius = Math.max(80, this.renderer.w * 0.15); // Adjusted for performance
+        const hitRadius = Math.max(80, this.renderer.w * 0.15);
 
         this.kisses.forEach(kiss => {
             if (kiss.hit || kiss.missed) return;
@@ -99,7 +110,7 @@ class Game {
     }
 
     start() {
-        console.log("NUMARIN Session Started (Frontal Defense Mode)");
+        console.log("NUMARIN Session Started (World Ranking Enabled)");
         this.state = 'playing';
         this.kisses = [];
         this.stats = { score: 0, combo: 0, maxCombo: 0, blocked: 0 };
@@ -110,9 +121,7 @@ class Game {
         this.lastBeatProcessed = -1;
         this.gameTime = 0;
 
-        // --- GHOSTING FIX: Explicit local and renderer reset ---
         this.renderer.reset(); 
-        
         this._showScreen('game-screen');
         this._updateHUD();
 
@@ -144,8 +153,6 @@ class Game {
                 if (!kiss.chuPlayed && kiss.progress > 0.2) {
                     kiss.chuPlayed = true; try { this.audio.playChu(); } catch (e) {}
                 }
-                
-                // --- FRONTAL DEFENSE: Failure when passing the camera (progress > 1.05) ---
                 if (kiss.progress > 1.05) {
                     kiss.missed = true; missedKiss = kiss;
                 }
@@ -182,7 +189,7 @@ class Game {
     }
 
     _spawnKiss(targetTime, travelTime) {
-        const margin = 40; // Reduced margin to allow wider spread on mobile
+        const margin = 40;
         const tx = margin + Math.random() * (this.renderer.w - margin * 2);
         const ty = this.renderer.h * 0.8 + Math.random() * (this.renderer.h * 0.15);
         this.kisses.push({ id: this.nextKissId++, targetX: tx, targetY: ty, targetTime: targetTime, spawnTime: targetTime - travelTime, progress: 0, hit: false, missed: false, chuPlayed: false });
@@ -199,14 +206,69 @@ class Game {
         this.state = 'gameover';
         try { this.audio.playGameOverSound(); } catch (e) {}
         
-        // Game over at camera collision (large p)
         const p = missedKiss.progress;
         const perspective = Math.pow(p, 2.5);
         const kx = this.renderer.vanishX + (missedKiss.targetX - this.renderer.vanishX) * perspective;
         const ky = (this.renderer.vanishY + (missedKiss.targetY - this.renderer.vanishY) * perspective);
         
         this.renderer.startGameOverExplosion(kx, ky);
-        setTimeout(() => { if (this.state === 'gameover') this._showScreen('gameover-screen'); }, 2200);
+
+        // --- UPDATE RESULT DISPLAY (FIX SCORE 0) ---
+        // Force update DOM immediately
+        const finalScore = this.stats.score;
+        document.getElementById('gameover-score').textContent = finalScore.toLocaleString();
+        document.getElementById('gameover-blocked').textContent = this.stats.blocked;
+        document.getElementById('gameover-maxcombo').textContent = this.stats.maxCombo;
+
+        const duration = (performance.now() - this.startTime) / 1000;
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
+        document.getElementById('gameover-time').textContent = `${minutes}:${seconds}`;
+
+        // Global Save & Refresh
+        this._saveScoreToCloud(this.playerName, finalScore);
+        
+        setTimeout(() => { 
+            if (this.state === 'gameover') this._showScreen('gameover-screen'); 
+        }, 2200);
+    }
+
+    // --- dreamlo World Leaderboard Integration ---
+    async _saveScoreToCloud(name, score) {
+        if (score <= 0) return;
+        const url = `https://www.dreamlo.com/lb/${this.dreamloPrivateK}/add/${encodeURIComponent(name)}/${score}`;
+        try {
+            await fetch(url);
+            this._updateLeaderboardUI(); // Refresh list after saving
+        } catch (e) {
+            console.error("Cloud save failed:", e);
+        }
+    }
+
+    async _updateLeaderboardUI() {
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">SYNCING GLOBAL RECORDS...</p>';
+        
+        const url = `https://www.dreamlo.com/lb/${this.dreamloPublicK}/json`;
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            let scores = data.dreamlo.leaderboard.entry;
+            
+            // Handle single entry or empty case
+            if (!scores) scores = [];
+            else if (!Array.isArray(scores)) scores = [scores];
+
+            list.innerHTML = scores.slice(0, 5).map((s, i) => `
+                <div class="leaderboard-item ${s.name === this.playerName && parseInt(s.score) === this.stats.score ? 'current-player' : ''}">
+                    <span class="leaderboard-rank">#${i + 1}</span>
+                    <span class="leaderboard-name">${s.name}</span>
+                    <span class="leaderboard-score">${parseInt(s.score).toLocaleString()}</span>
+                </div>
+            `).join('') || '<p style="opacity: 0.3; font-size: 0.8rem;">NO RECORDS YET</p>';
+        } catch (e) {
+            list.innerHTML = '<p style="opacity: 0.3; font-size: 0.7rem;">OFFLINE MODE</p>';
+        }
     }
 
     _showScreen(id) {

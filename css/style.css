@@ -51,14 +51,45 @@ body {
 
 /* Buttons */
 .gold-btn {
-    margin-top: 40px; padding: 15px 45px;
+    margin-top: 30px; padding: 15px 45px;
     background: transparent; border: 2px solid var(--gold);
     color: var(--gold); font-weight: 700; letter-spacing: 0.2rem;
     cursor: pointer; position: relative; overflow: hidden;
     transition: 0.3s;
 }
 .gold-btn:active { background: var(--gold); color: #000; scale: 0.95; }
-.title-credit { margin-top: 30px; font-size: 0.7rem; color: #666; font-style: italic; }
+
+/* Input Group */
+.input-group {
+    margin-top: 30px;
+    position: relative;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#player-name {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 12px 10px;
+    width: 100%;
+    outline: none;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+}
+#player-name::placeholder { color: rgba(255,255,255,0.2); font-size: 0.8rem; letter-spacing: 0.1rem; }
+.input-line {
+    position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+    background: var(--gold); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-50%);
+}
+#player-name:focus + .input-line { width: 100%; }
+
+.title-credit { margin-top: 40px; font-size: 0.7rem; color: #666; font-style: italic; }
 
 /* Game HUD */
 #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -73,15 +104,57 @@ body {
 .hud-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #fff; }
 
 /* Game Over */
-#gameover-screen { background: rgba(0,0,0,0.92); z-index: 20; }
-.gameover-content { text-align: center; }
-.gameover-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #fff; margin-bottom: 20px; }
-.gameover-score-block { margin-bottom: 30px; }
-.gameover-score-block .gameover-value { font-size: 4rem; color: var(--gold); }
-.gameover-stats { display: flex; justify-content: space-around; width: 100%; max-width: 500px; margin-bottom: 40px; }
+#gameover-screen { background: rgba(0,0,0,0.94); z-index: 20; padding: 20px; }
+.gameover-content { text-align: center; width: 100%; max-width: 500px; }
+.gameover-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; color: #fff; margin-bottom: 10px; }
+.gameover-score-block { margin-bottom: 20px; }
+.gameover-score-block .gameover-value { font-size: 4.5rem; color: var(--gold); font-family: 'Playfair Display', serif; }
+.gameover-stats { display: flex; justify-content: space-around; width: 100%; margin-bottom: 30px; }
 .gameover-stat { text-align: center; }
-.gameover-stat-label { display: block; font-size: 0.6rem; color: #999; margin-bottom: 5px; }
-.gameover-stat-value { font-size: 1.2rem; font-weight: 600; color: #fff; }
+.gameover-stat-label { display: block; font-size: 0.6rem; color: #999; margin-bottom: 5px; letter-spacing: 0.1rem; }
+.gameover-stat-value { font-size: 1.3rem; font-weight: 600; color: #fff; }
+
+/* Leaderboard */
+.leaderboard-container {
+    margin: 0 auto 30px auto;
+    width: 100%;
+    max-width: 320px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding-top: 20px;
+}
+.leaderboard-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.3rem;
+    color: var(--gold);
+    margin-bottom: 15px;
+    font-weight: 400;
+}
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    background: rgba(15, 12, 12, 0.8);
+    border-radius: 4px;
+    margin-bottom: 4.5px;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.leaderboard-item.current-player {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+.leaderboard-rank { color: var(--gold); font-weight: 900; width: 30px; text-align: left; }
+.leaderboard-name { flex-grow: 1; text-align: left; color: #fff; font-weight: 500; letter-spacing: 0.05rem; }
+.leaderboard-score { font-family: 'Inter', sans-serif; font-weight: 700; color: var(--gold); }
+
+.retry-btn { margin-top: 10px; }
 
 @keyframes glow-float {
     0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); }
@@ -92,4 +165,6 @@ body {
     .title-main { font-size: 2.8rem; }
     .hud-center { gap: 20px; }
     .hud-value { font-size: 1.4rem; }
+    .gameover-title { font-size: 2.2rem; }
+    .gameover-score-block .gameover-value { font-size: 3.5rem; }
 }
